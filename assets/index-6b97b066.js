@@ -988,7 +988,6 @@ let gi = new T();
 let infectionRate = 0.5;
 let population = [];
 let incubationperiod=8;
-
 /* --- COORDINATE HELPER ------------------------------------------------
  *
  * Positions in your simulation are "percent coordinates": x and y
@@ -1046,11 +1045,15 @@ function drawSimulation(ctx, bounds, elapsed) {
   // (in your real code you'll replace this with a loop)
   // like...
   // for (let person of population) {...}
-
-  drawPerson(50, 50, 'green');
-  drawPerson(35, 80, 'red');
-
-  // YOUR CODE HERE
+  for (let person of population) {
+    let color="green";
+    if (person.infected) {
+      color="red";
+    } else if (person.incubationTime > 0) {
+      color="orange";
+    } 
+    drawPerson(person.x, person.y, color);
+  }
 
 }
 
@@ -1150,6 +1153,30 @@ gi.addDrawing(function ({ ctx, width, height }) {
  */
 
 // YOUR CODE HERE
+function spreadInfection() {
+for (let person of population) {
+  Math.floor(
+    IDX = Math.random() * population.length
+  );
+  partner = population[IDX];
+  if (Math.random() < infectionRate) {
+    partner.infected = true;
+    partner.incubationTime = incubationperiod;
+  }
+}
+}
+function NewRound() {
+spreadInfection();
+  for (let person of population) {
+    if (person.infected) {
+      person.incubationTime--;
+      if (person.incubationTime <= 0) {
+        person.infected = true;
+      }
+    }
+  }
+}
+
 function generatePopulation(size) {
   population = [];
   for (let i = 0; i < size; i++) {
@@ -1160,7 +1187,10 @@ function generatePopulation(size) {
       incubationTime: 0,
     });
   }
+  population[0].infected = true; // start with one infected person (help from AI)
+  population[0].incubationTime = incubationperiod;
 }
+
 
 /* --- CONTROLS --------------------------------------------------------- */
 
@@ -1169,7 +1199,7 @@ let topBar = gi.addTopBar();
 topBar.addButton({
   text: 'Next Round',
   onclick: function () {
-    window.alert('Replace me: call your simulation update function');
+    NewRound();
   }
 });
 
@@ -1197,7 +1227,7 @@ topBar.addSlider({
 topBar.addButton({
   text: 'Reset',
   onclick: function () {
-    window.alert('Replace me: call your generatePopulation function');
+   (generatePopulation(16));
   }
 });
 
@@ -1205,4 +1235,4 @@ topBar.addButton({
 
 
 gi.run();
-//# sourceMappingURL=index-4d5cce82.js.map
+//# sourceMappingURL=index-6b97b066.js.map
