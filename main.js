@@ -181,7 +181,17 @@ gi.addDrawing(function ({ ctx, width, height }) {
  */
 
 // YOUR CODE HERE
-
+function generatePopulation(size) {
+  population = [];
+  for (let i = 0; i < size; i++) {
+    population.push({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      infected: false,
+      incubationTime: 0,
+    });
+  }
+}
 
 /* --- CONTROLS --------------------------------------------------------- */
 
@@ -211,7 +221,7 @@ topBar.addSlider({
   label: 'Initial Population',
   min: 16, max: 2048,
   oninput: function (value) {
-    window.alert('Replace me: call your generatePopulation function with size ' + value);
+    generatePopulation(value);
   }
 });
 
