@@ -986,10 +986,8 @@ let gi = new T();
 /* --- STATE ------------------------------------------------------------ */
 
 let infectionRate = 0.5;
-// let population = [];
-// let roundCount = 0;
-// let infectedPerRound = [1];
-
+let population = [];
+let incubationperiod=8;
 
 /* --- COORDINATE HELPER ------------------------------------------------
  *
@@ -1152,7 +1150,17 @@ gi.addDrawing(function ({ ctx, width, height }) {
  */
 
 // YOUR CODE HERE
-
+function generatePopulation(size) {
+  population = [];
+  for (let i = 0; i < size; i++) {
+    population.push({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      infected: false,
+      incubationTime: 0,
+    });
+  }
+}
 
 /* --- CONTROLS --------------------------------------------------------- */
 
@@ -1171,12 +1179,18 @@ topBar.addSlider({
   value: infectionRate,
   oninput: function (value) { infectionRate = value; }
 });
+topBar.addSlider({
+  label: 'Incubation period',
+  min: 1, max: 50, step: 1,
+  value: incubationperiod,
+  oninput: function (value) { incubationperiod = value; }
+});
 
 topBar.addSlider({
   label: 'Initial Population',
   min: 16, max: 2048,
   oninput: function (value) {
-    window.alert('Replace me: call your generatePopulation function with size ' + value);
+    generatePopulation(value);
   }
 });
 
@@ -1191,4 +1205,4 @@ topBar.addButton({
 
 
 gi.run();
-//# sourceMappingURL=index-deb08b3a.js.map
+//# sourceMappingURL=index-4d5cce82.js.map
