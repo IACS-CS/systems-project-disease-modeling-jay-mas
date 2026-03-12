@@ -15,10 +15,10 @@ let gi = new GameInterface();
 /* --- STATE ------------------------------------------------------------ */
 
 let infectionRate = 0.5;
-// let population = [];
-// let roundCount = 0;
-// let infectedPerRound = [1];
-
+let population = [];
+let roundCount = 0;
+let infectedPerRound = [1];
+let incubationperiod=8
 
 /* --- COORDINATE HELPER ------------------------------------------------
  *
@@ -199,6 +199,12 @@ topBar.addSlider({
   min: 0, max: 1, step: 0.01,
   value: infectionRate,
   oninput: function (value) { infectionRate = value; }
+});
+topBar.addSlider({
+  label: 'Incubation period',
+  min: 1, max: 50, step: 1,
+  value: incubationperiod,
+  oninput: function (value) { incubationperiod = value; }
 });
 
 topBar.addSlider({
