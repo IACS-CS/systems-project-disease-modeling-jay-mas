@@ -18,6 +18,14 @@ let population = [];
 let roundCount = 0;
 let infectedPerRound = [1];
 let incubationperiod = 8;
+let roundData = [{
+  totalInfected: 0,
+  newlyInfected: 0,
+  incubating: 0,
+  healthy: 0,
+}
+];
+
 /* --- COORDINATE HELPER ------------------------------------------------
  *
  * Positions in your simulation are "percent coordinates": x and y
@@ -102,7 +110,7 @@ function drawSimulation(ctx, bounds, elapsed) {
  * @param {CanvasRenderingContext2D} ctx
  * @param {{top:number, bottom:number, left:number, right:number}} bounds
  */
-function drawGraph(data, dataMax, ctx, bounds) {
+function drawGraph(roundData, ctx, bounds) {
   // Axes
   let topLeft = percentToPixels(0, 0, bounds);
   let bottomLeft = percentToPixels(0, 100, bounds);
@@ -115,8 +123,59 @@ function drawGraph(data, dataMax, ctx, bounds) {
   ctx.lineTo(bottomRight.x, bottomRight.y);
   ctx.stroke();
 
-  // YOUR CODE HERE
-  // Hint: let pct = (data[i] / dataMax) * 100;
+// Only draw if we have data
+  if (roundData.length === 0) return;
+  
+  // Calculate bar width based on available space
+  let graphWidth = bottomRight.x - bottomLeft.x;
+  let graphHeight = bottomLeft.y - topLeft.y;
+  let barWidth = graphWidth / roundData.length;
+  let spacing = barWidth * 0.1;  // 10% spacing between bars
+  let actualBarWidth = barWidth - spacing;
+  
+  // Draw each round as a stacked bar
+  for (let i = 0; i < roundData.length; i++) {
+    let data = roundData[i];
+    let total = data.healthy + data.incubating + data.newlyInfected + data.totalInfected;
+    
+    if (total === 0) continue;  // Skip if no one in population
+    
+    // Calculate starting position
+    let barX = bottomLeft.x + (i * barWidth) + (spacing / 2);
+    let barY = bottomLeft.y;
+    
+    // Calculate percentages (they sum to 100%)
+    let healthyPct = (data.healthy / total) * 100;
+    let incubatingPct = (data.incubating / total) * 100;
+    let newlyInfectedPct = (data.newlyInfected / total) * 100;
+    let infectedPct = (data.totalInfected / total) * 100;
+    
+    // Draw from bottom up: healthy -> incubating -> newly infected -> infected
+    let currentY = barY;
+    
+    // Healthy (green)
+    let healthyHeight = (healthyPct / 100) * graphHeight;
+    ctx.fillStyle = "green";
+    ctx.fillRect(barX, currentY - healthyHeight, actualBarWidth, healthyHeight);
+    currentY -= healthyHeight;
+    
+    // Incubating (orange)
+    let incubatingHeight = (incubatingPct / 100) * graphHeight;
+    ctx.fillStyle = "orange";
+    ctx.fillRect(barX, currentY - incubatingHeight, actualBarWidth, incubatingHeight);
+    currentY -= incubatingHeight;
+    
+    // Newly infected (yellow)
+    let newlyInfectedHeight = (newlyInfectedPct / 100) * graphHeight;
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(barX, currentY - newlyInfectedHeight, actualBarWidth, newlyInfectedHeight);
+    currentY -= newlyInfectedHeight;
+    
+    // Infected (red)
+    let infectedHeight = (infectedPct / 100) * graphHeight;
+    ctx.fillStyle = "red";
+    ctx.fillRect(barX, currentY - infectedHeight, actualBarWidth, infectedHeight);
+  }
 }
 
 /* --- DRAWING: HUD -----------------------------------------------------
@@ -160,7 +219,7 @@ gi.addDrawing(function ({ ctx, width, height }) {
     left: 50,
     right: width - 50,
   };
-  drawGraph([], 1, ctx, graphBounds); // <- replace [] and 1 with your real data
+  drawGraph(roundData, ctx, graphBounds); 
 });
 
 gi.addDrawing(function ({ ctx, width, height }) {
@@ -193,6 +252,9 @@ function spreadInfection() {
 }
 function NewRound() {
   roundCount++;
+  let totalInfected = 0;
+  let incubating = 0;
+  let healthy = 0;
   let infectedThisRound = 0;
   spreadInfection();
   for (let person of population) {
@@ -205,11 +267,29 @@ function NewRound() {
       infectedThisRound++;
     }
   }
+    // Count newly infected before we update their state
+  let newlyInfected = 0;
+  for (let person of population) {
+    if (person.incubationTime === 1) {  // will become 0 this round
+      newlyInfected++;
+    }
+  }
+    // Count final state after updates
+    if (person.infected) {
+      totalInfected++;
+    } else if (person.incubationTime > 0) {
+      incubating++;
+    } else {
+      healthy++;
+    }
+  
+  roundData.push({ totalInfected, newlyInfected, incubating, healthy });
 }
 
 function generatePopulation(size) {
   population = [];
   roundCount = 0;
+  roundData = [{totalInfected: 0, newlyInfected: 0, incubating: 0, healthy: 0}];
   for (let i = 0; i < size; i++) {
     population.push({
       x: Math.random() * 100,
