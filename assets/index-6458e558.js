@@ -982,12 +982,12 @@ class T extends p {
 
 let gi = new T();
 
-
 /* --- STATE ------------------------------------------------------------ */
 
 let infectionRate = 0.5;
 let population = [];
-let incubationperiod=8;
+let roundCount = 0;
+let incubationperiod = 8;
 /* --- COORDINATE HELPER ------------------------------------------------
  *
  * Positions in your simulation are "percent coordinates": x and y
@@ -1012,7 +1012,6 @@ function percentToPixels(x, y, bounds) {
   };
 }
 
-
 /* --- DRAWING: SIMULATION ----------------------------------------------
  *
  * Draw your agents inside the simulation area.
@@ -1022,23 +1021,26 @@ function percentToPixels(x, y, bounds) {
  * @param {number} elapsed - ms since simulation started
  */
 function drawSimulation(ctx, bounds, elapsed) {
-
   // Draw a border around the simulation area...
   let topLeft = percentToPixels(0, 0, bounds);
   let bottomRight = percentToPixels(100, 100, bounds);
-  ctx.strokeStyle = 'orange';
+  ctx.strokeStyle = "orange";
   ctx.lineWidth = 2;
-  ctx.strokeRect(topLeft.x, topLeft.y,
+  ctx.strokeRect(
+    topLeft.x,
+    topLeft.y,
     bottomRight.x - topLeft.x,
-    bottomRight.y - topLeft.y);
+    bottomRight.y - topLeft.y,
+  );
 
   // Example: utility function to draw a person as a circle
-  function drawPerson(px, py, color) {
+  function drawPerson(px, py, color, person) {
     let { x, y } = percentToPixels(px, py, bounds);
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillText(`${person.incubationTime}`, x + 8, y - 8);
   }
 
   // Now we draw some people...
@@ -1046,17 +1048,15 @@ function drawSimulation(ctx, bounds, elapsed) {
   // like...
   // for (let person of population) {...}
   for (let person of population) {
-    let color="green";
-    if (person.infected) {
-      color="red";
-    } else if (person.incubationTime > 0) {
-      color="orange";
-    } 
-    drawPerson(person.x, person.y, color);
+    let color = "green";
+    if (person.incubationTime > 0) {
+      color = "orange";
+    } else if (person.infected) {
+      color = "red";
+    }
+    drawPerson(person.x, person.y, color, person);
   }
-
 }
-
 
 /* --- DRAWING: GRAPH ---------------------------------------------------
  *
@@ -1073,12 +1073,11 @@ function drawSimulation(ctx, bounds, elapsed) {
  * @param {{top:number, bottom:number, left:number, right:number}} bounds
  */
 function drawGraph(data, dataMax, ctx, bounds) {
-
   // Axes
   let topLeft = percentToPixels(0, 0, bounds);
   let bottomLeft = percentToPixels(0, 100, bounds);
   let bottomRight = percentToPixels(100, 100, bounds);
-  ctx.strokeStyle = 'white';
+  ctx.strokeStyle = "white";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(topLeft.x, topLeft.y);
@@ -1088,9 +1087,7 @@ function drawGraph(data, dataMax, ctx, bounds) {
 
   // YOUR CODE HERE
   // Hint: let pct = (data[i] / dataMax) * 100;
-
 }
-
 
 /* --- DRAWING: HUD -----------------------------------------------------
  *
@@ -1101,18 +1098,15 @@ function drawGraph(data, dataMax, ctx, bounds) {
  * @param {number} height
  */
 function drawHUD(ctx, width, height) {
-
   // YOUR CODE HERE
-  ctx.textAlign = 'left';
-  ctx.fillStyle = 'white';
-  ctx.strokeStyle = 'red';
-  let text = `Simulation - Infection Rate: ${infectionRate.toFixed(2)}`;
-  ctx.font = '16pt sans-serif';
+  ctx.textAlign = "left";
+  ctx.fillStyle = "white";
+  ctx.strokeStyle = "red";
+  let text = `Simulation - Infection Rate: ${infectionRate.toFixed(2)}, round ${roundCount}`;
+  ctx.font = "16pt sans-serif";
   ctx.strokeText(text, 15, 25);
   ctx.fillText(text, 15, 25);
-
 }
-
 
 /* --- REGISTERED DRAWING CALLBACKS -------------------------------------
  * You shouldn't need to change these.
@@ -1136,13 +1130,12 @@ gi.addDrawing(function ({ ctx, width, height }) {
     left: 50,
     right: width - 50,
   };
-  drawGraph([], 1, ctx, graphBounds);  // <- replace [] and 1 with your real data
+  drawGraph([], 1, ctx, graphBounds); // <- replace [] and 1 with your real data
 });
 
 gi.addDrawing(function ({ ctx, width, height }) {
   drawHUD(ctx);
 });
-
 
 /* --- SIMULATION LOGIC -------------------------------------------------
  *
@@ -1154,31 +1147,36 @@ gi.addDrawing(function ({ ctx, width, height }) {
 
 // YOUR CODE HERE
 function spreadInfection() {
-for (let person of population) {
-  Math.floor(
-    IDX = Math.random() * population.length
-  );
-  partner = population[IDX];
-  if (Math.random() < infectionRate) {
-    partner.infected = true;
-    partner.incubationTime = incubationperiod;
+  for (let person of population) {
+    let IDX = Math.floor(Math.random() * population.length);
+    let partner = population[IDX];
+    if (person.infected === true && partner.infected === false && partner.incubationTime <= 0) {
+      if (Math.random() < infectionRate) {
+        partner.incubationTime = incubationperiod;
+      } else if (partner.infected === true && person.infected === false && person.incubationTime <= 0) {
+        if (Math.random() < infectionRate) {
+          person.incubationTime = incubationperiod;
+        }
+      }
+    }
   }
 }
-}
 function NewRound() {
-spreadInfection();
+  roundCount++;
+  spreadInfection();
   for (let person of population) {
-    if (person.infected) {
+    if (person.incubationTime > 0) {
       person.incubationTime--;
       if (person.incubationTime <= 0) {
         person.infected = true;
       }
-    }
+    } else if (person.infected) ;
   }
 }
 
 function generatePopulation(size) {
   population = [];
+  roundCount = 0;
   for (let i = 0; i < size; i++) {
     population.push({
       x: Math.random() * 100,
@@ -1187,52 +1185,62 @@ function generatePopulation(size) {
       incubationTime: 0,
     });
   }
-  population[0].infected = true; // start with one infected person (help from AI)
+  population[0].infected = false; // start with one incubated person (help from AI)
   population[0].incubationTime = incubationperiod;
 }
-
 
 /* --- CONTROLS --------------------------------------------------------- */
 
 let topBar = gi.addTopBar();
 
 topBar.addButton({
-  text: 'Next Round',
+  text: "Next Round",
   onclick: function () {
     NewRound();
-  }
+  },
 });
 
 topBar.addSlider({
-  label: 'Infection Rate',
-  min: 0, max: 1, step: 0.01,
+  label: "Infection Rate",
+  min: 0,
+  max: 1,
+  step: 0.01,
   value: infectionRate,
-  oninput: function (value) { infectionRate = value; }
+  oninput: function (value) {
+    infectionRate = value;
+  },
 });
 topBar.addSlider({
-  label: 'Incubation period',
-  min: 1, max: 50, step: 1,
+  label: "Incubation period",
+  min: 1,
+  max: 50,
+  step: 1,
   value: incubationperiod,
-  oninput: function (value) { incubationperiod = value; }
+  oninput: function (value) {
+    incubationperiod = value;
+  },
 });
 
 topBar.addSlider({
-  label: 'Initial Population',
-  min: 16, max: 2048,
+  label: "Initial Population",
+  min: 16,
+  max: 2048,
   oninput: function (value) {
     generatePopulation(value);
-  }
+  },
 });
 
+generatePopulation(16); // start with 16 people
+
 topBar.addButton({
-  text: 'Reset',
+  text: "Reset",
   onclick: function () {
-   (generatePopulation(16));
-  }
+    generatePopulation(16);
+      roundCount = 0;
+  },
 });
 
 // TODO: add sliders or inputs for your own parameters here
 
-
 gi.run();
-//# sourceMappingURL=index-6b97b066.js.map
+//# sourceMappingURL=index-6458e558.js.map
