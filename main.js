@@ -252,11 +252,12 @@ function spreadInfection() {
 }
 function NewRound() {
   roundCount++;
+  spreadInfection();
   let totalInfected = 0;
   let incubating = 0;
   let healthy = 0;
   let infectedThisRound = 0;
-  spreadInfection();
+  let newlyInfected = 0;
   for (let person of population) {
     if (person.incubationTime > 0) {
       person.incubationTime--;
@@ -268,12 +269,11 @@ function NewRound() {
     }
   }
     // Count newly infected before we update their state
-  let newlyInfected = 0;
   for (let person of population) {
     if (person.incubationTime === 1) {  // will become 0 this round
       newlyInfected++;
     }
-  }
+
     // Count final state after updates
     if (person.infected) {
       totalInfected++;
@@ -283,7 +283,13 @@ function NewRound() {
       healthy++;
     }
   
-  roundData.push({ totalInfected, newlyInfected, incubating, healthy });
+  }
+  roundData.push({ 
+    totalInfected: totalInfected,
+    newlyInfected: newlyInfected,
+    incubating: incubating,
+    healthy: healthy, });
+  console.log(roundData)
 }
 
 function generatePopulation(size) {
@@ -337,7 +343,7 @@ topBar.addSlider({
 topBar.addSlider({
   label: "Initial Population",
   min: 16,
-  max: 2048,
+  max: 4096,
   oninput: function (value) {
     generatePopulation(value);
   },
@@ -353,6 +359,28 @@ topBar.addButton({
   },
 });
 
-// TODO: add sliders or inputs for your own parameters here
+let interval = null;
+
+topBar.addButton({
+  text : 'Auto-Run',
+  onclick : function () {
+    if (!interval) {
+      interval = window.setInterval(
+        function() {
+          NewRound();
+        }, 50
+      );
+      
+    }
+  }
+})
+
+topBar.addButton({
+  text : 'Stop Auto-Run',
+  onclick : function () {
+    window.clearInterval(interval);
+    interval = null;
+  }
+})
 
 gi.run();
